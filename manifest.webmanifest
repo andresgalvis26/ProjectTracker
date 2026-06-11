@@ -2,7 +2,7 @@
   "name": "Project Tracker",
   "short_name": "Tracker",
   "description": "Manejador personal de proyectos.",
-  "start_url": "./",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
