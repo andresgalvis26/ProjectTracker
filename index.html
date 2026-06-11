@@ -19,6 +19,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap"
         rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="index.css" />
 </head>
 
@@ -171,7 +172,16 @@
     </div>
 
     <script>
-        const API_BASE_URL = 'https://felipeos-api.runasp.net/api/Projects'
+        const IS_LOCAL_ENV =
+            window.location.protocol === 'file:' ||
+            window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1'
+        const API_BASE_URL = IS_LOCAL_ENV
+            ? 'https://localhost:7213/api/Projects'
+            : 'https://felipeos-api.runasp.net/api/Projects'
+        const AUTH_LOGIN_URL = IS_LOCAL_ENV
+            ? 'https://localhost:7213/api/Auth/login'
+            : 'https://felipeos-api.runasp.net/api/Auth/login'
         const ALLOWED_STATUS = ['live', 'wip', 'paused', 'idea']
         const API_STATUS_TO_UI = {
             0: 'idea',
@@ -186,6 +196,7 @@
             paused: 3
         }
         const AUTH_STORAGE_KEY = 'project-tracker-session'
+        const AUTH_TOKEN_KEY = 'project-tracker-token'
         const DEMO_USER = {
             email: 'admin@project.local',
             password: 'admin123',
@@ -214,13 +225,23 @@
                 JSON.stringify({
                     email: user.email,
                     name: user.name,
+                    token: user.token,
                     loggedAt: new Date().toISOString()
                 })
             )
         }
 
+        function persistToken(token) {
+            localStorage.setItem(AUTH_TOKEN_KEY, token)
+        }
+
+        function getStoredToken() {
+            return localStorage.getItem(AUTH_TOKEN_KEY) || ''
+        }
+
         function clearSession() {
             localStorage.removeItem(AUTH_STORAGE_KEY)
+            localStorage.removeItem(AUTH_TOKEN_KEY)
         }
 
         function setAuthError(message = '') {
@@ -244,22 +265,81 @@
 
         function startAuthenticatedSession(user) {
             persistSession(user)
+            if (user.token) persistToken(user.token)
             showApp(user)
             loadProjectsFromApi()
         }
 
-        function handleLogin(event) {
+        function showLoginError(message) {
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Credenciales inválidas',
+                    text: message,
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#111827'
+                })
+                return
+            }
+
+            setAuthError(message)
+        }
+
+        async function handleLogin(event) {
             event.preventDefault()
             const email = document.getElementById('login-email').value.trim().toLowerCase()
             const password = document.getElementById('login-password').value
 
-            if (email !== DEMO_USER.email || password !== DEMO_USER.password) {
-                setAuthError('Credenciales inválidas. Usa el acceso demo por ahora.')
+            if (!email || !password) {
+                setAuthError('Ingresa correo y contraseña.')
                 return
             }
 
             setAuthError('')
-            startAuthenticatedSession({ email: DEMO_USER.email, name: DEMO_USER.name })
+
+            try {
+                const response = await fetch(AUTH_LOGIN_URL, {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                })
+
+                if (!response.ok) {
+                    let detail = 'Credenciales inválidas.'
+                    try {
+                        const errorBody = await response.json()
+                        detail = errorBody?.message || errorBody?.title || detail
+                    } catch {
+                        // Ignora respuestas de error que no son JSON.
+                    }
+                    throw new Error(detail)
+                }
+
+                const payload = await response.json()
+                const token =
+                    payload?.token ||
+                    payload?.jwt ||
+                    payload?.accessToken ||
+                    payload?.access_token ||
+                    payload?.data?.token ||
+                    payload?.data?.jwt ||
+                    ''
+
+                if (!token) {
+                    throw new Error('El backend no devolvió un token JWT.')
+                }
+
+                const userName =
+                    payload?.name || payload?.fullName || payload?.user?.name || email
+
+                setAuthError('')
+                startAuthenticatedSession({ email, name: userName, token })
+            } catch (error) {
+                showLoginError(error.message || 'No se pudo iniciar sesión.')
+            }
         }
 
         function handleLogout() {
@@ -277,6 +357,29 @@
             closeModal()
             renderCards()
             showLogin()
+        }
+
+        async function requestLogout() {
+            if (window.Swal) {
+                const result = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Cerrar sesión',
+                    text: '¿Quieres cerrar tu sesión actual?',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, cerrar sesión',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#111827',
+                    cancelButtonColor: '#6b7280'
+                })
+
+                if (!result.isConfirmed) return
+                handleLogout()
+                return
+            }
+
+            if (confirm('¿Quieres cerrar tu sesión actual?')) {
+                handleLogout()
+            }
         }
 
         function updateApiStatus(state, message) {
@@ -448,11 +551,13 @@
 
         async function apiRequest(path = '', options = {}) {
             const { body, headers = {}, ...rest } = options
+            const token = getStoredToken()
             const response = await fetch(buildApiUrl(path), {
                 method: rest.method || 'GET',
                 headers: {
                     Accept: 'application/json',
                     ...(body ? { 'Content-Type': 'application/json' } : {}),
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
                     ...headers
                 },
                 body,
@@ -805,10 +910,10 @@
         // ── INIT ──
         function initApp() {
             document.getElementById('login-form').addEventListener('submit', handleLogin)
-            document.getElementById('logout-btn').addEventListener('click', handleLogout)
+            document.getElementById('logout-btn').addEventListener('click', requestLogout)
 
             const storedSession = getStoredSession()
-            if (storedSession?.email) {
+            if (storedSession?.email && getStoredToken()) {
                 showApp(storedSession)
                 loadProjectsFromApi()
                 return
