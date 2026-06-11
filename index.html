@@ -36,20 +36,15 @@
                 </p>
             </div>
             <form class="login-form" id="login-form">
-                <div class="login-demo">
-                    <span>Demo</span>
-                    <strong>admin@project.local</strong>
-                    <small>Clave: admin123</small>
-                </div>
                 <div class="form-group">
                     <label class="form-label" for="login-email">Correo</label>
                     <input class="form-input" id="login-email" type="email" autocomplete="email"
-                        placeholder="admin@project.local" required />
+                        placeholder="correo@ejemplo.com" required />
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="login-password">Contraseña</label>
                     <input class="form-input" id="login-password" type="password" autocomplete="current-password"
-                        placeholder="admin123" required />
+                        placeholder="Tu contraseña" required />
                 </div>
                 <p class="auth-error" id="auth-error" role="alert"></p>
                 <button class="login-btn" type="submit">Entrar al tablero</button>
@@ -197,11 +192,6 @@
         }
         const AUTH_STORAGE_KEY = 'project-tracker-session'
         const AUTH_TOKEN_KEY = 'project-tracker-token'
-        const DEMO_USER = {
-            email: 'admin@project.local',
-            password: 'admin123',
-            name: 'Admin'
-        }
 
         // ── STATE ──
         let projects = []
