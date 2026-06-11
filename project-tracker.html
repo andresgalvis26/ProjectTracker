@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0e0e0e" />
+    <meta name="application-name" content="Project Tracker" />
+    <meta name="apple-mobile-web-app-title" content="Project Tracker" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>Project Tracker</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/icons/favicon-48x48.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="index.css" />
+</head>
+
+<body>
+    <!-- LOGIN -->
+    <main class="login-screen" id="login-screen">
+        <section class="login-panel">
+            <div class="login-brand">
+                <img class="login-logo" src="assets/icons/icon-192x192.png" alt="" />
+                <span class="login-kicker">Project Tracker</span>
+                <h1 class="login-title">Gestiona tus proyectos con foco.</h1>
+                <p class="login-copy">
+                    Inicia sesión para cargar tu tablero personal y mantener tu estado activo en este navegador.
+                </p>
+            </div>
+            <form class="login-form" id="login-form">
+                <div class="login-demo">
+                    <span>Demo</span>
+                    <strong>admin@project.local</strong>
+                    <small>Clave: admin123</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="login-email">Correo</label>
+                    <input class="form-input" id="login-email" type="email" autocomplete="email"
+                        placeholder="admin@project.local" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="login-password">Contraseña</label>
+                    <input class="form-input" id="login-password" type="password" autocomplete="current-password"
+                        placeholder="admin123" required />
+                </div>
+                <p class="auth-error" id="auth-error" role="alert"></p>
+                <button class="login-btn" type="submit">Entrar al tablero</button>
+            </form>
+        </section>
+    </main>
+
+    <div class="app-shell is-hidden" id="app-shell">
+    <!-- HEADER -->
+    <header>
+        <span class="header-label">v1.0.0 — 2025</span>
+        <span class="header-title">
+            <img class="header-logo" src="assets/icons/favicon-48x48.png" alt="" />
+            Project Tracker
+        </span>
+        <div class="header-right">
+            <div class="status-dot" id="api-status-dot"></div>
+            <span class="header-label" id="api-status-label">Conectando API</span>
+            <span class="header-user" id="session-user"></span>
+            <button class="logout-btn" id="logout-btn" type="button" title="Cerrar sesión">Salir</button>
+        </div>
+    </header>
+
+    <!-- HERO -->
+    <div class="hero">
+        <div>
+            <div class="hero-eyebrow">// Portafolio Personal</div>
+            <h1 class="hero-heading">Mis<br /><em>Proyectos</em></h1>
+        </div>
+        <div class="hero-stats">
+            <div class="stat">
+                <div class="stat-number" id="stat-total">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="stat-live">0</div>
+                <div class="stat-label">En vivo</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="stat-wip">0</div>
+                <div class="stat-label">En progreso</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="controls">
+        <button class="filter-btn active" data-filter="all">Todos</button>
+        <button class="filter-btn" data-filter="live">En vivo</button>
+        <button class="filter-btn" data-filter="wip">En progreso</button>
+        <button class="filter-btn" data-filter="paused">Pausado</button>
+        <button class="filter-btn" data-filter="idea">Idea</button>
+        <div class="controls-spacer"></div>
+        <div class="search-wrap">
+            <input class="search-input" type="text" id="search-input" placeholder="Buscar proyecto…" />
+            <span class="search-icon">⌕</span>
+        </div>
+        <button class="add-btn" id="add-btn">+ Nuevo proyecto</button>
+    </div>
+
+    <!-- GRID -->
+    <div class="grid-container" id="grid"></div>
+
+    <!-- FOOTER -->
+    <footer>
+        <span class="footer-text">Edita cualquier tarjeta directamente · Datos sincronizados con API</span>
+        <span class="footer-text"><span class="footer-accent">★</span> Project Tracker</span>
+    </footer>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <div class="modal-title" id="modal-title">Nuevo Proyecto</div>
+            <div class="form-group">
+                <label class="form-label">Nombre del proyecto *</label>
+                <input class="form-input" id="f-name" type="text" placeholder="Mi Proyecto Épico" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Descripción *</label>
+                <textarea class="form-textarea" id="f-desc"
+                    placeholder="¿Qué hace este proyecto? ¿Por qué lo construiste?"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Estado</label>
+                    <select class="form-select" id="f-status">
+                        <option value="live">En vivo</option>
+                        <option value="wip">En progreso</option>
+                        <option value="paused">Pausado</option>
+                        <option value="idea">Idea</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Progreso (%)</label>
+                    <input class="form-input" id="f-progress" type="number" min="0" max="100" value="0" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">URL del proyecto (demo en vivo)</label>
+                <input class="form-input" id="f-url" type="url" placeholder="https://mi-proyecto.vercel.app" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">URL del repositorio GitHub</label>
+                <input class="form-input" id="f-repo" type="url" placeholder="https://github.com/usuario/repo" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Stack tecnológico (separado por comas)</label>
+                <input class="form-input" id="f-stack" type="text" placeholder="React, Node.js, PostgreSQL" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tags (separado por comas)</label>
+                <input class="form-input" id="f-tags" type="text" placeholder="Frontend, API, SaaS" />
+            </div>
+            <div class="modal-actions" id="modal-actions">
+                <button class="btn-cancel" id="btn-cancel">Cancelar</button>
+                <button class="btn-save" id="btn-save">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:9026/api/v1/projects'
+        const ALLOWED_STATUS = ['live', 'wip', 'paused', 'idea']
+        const API_STATUS_TO_UI = {
+            0: 'idea',
+            1: 'wip',
+            2: 'live',
+            3: 'paused'
+        }
+        const UI_STATUS_TO_API = {
+            idea: 0,
+            wip: 1,
+            live: 2,
+            paused: 3
+        }
+        const AUTH_STORAGE_KEY = 'project-tracker-session'
+        const DEMO_USER = {
+            email: 'admin@project.local',
+            password: 'admin123',
+            name: 'Admin'
+        }
+
+        // ── STATE ──
+        let projects = []
+        let filter = 'all'
+        let search = ''
+        let editingId = null
+        let apiLoadError = ''
+        let currentUser = null
+
+        function getStoredSession() {
+            try {
+                return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY))
+            } catch {
+                return null
+            }
+        }
+
+        function persistSession(user) {
+            localStorage.setItem(
+                AUTH_STORAGE_KEY,
+                JSON.stringify({
+                    email: user.email,
+                    name: user.name,
+                    loggedAt: new Date().toISOString()
+                })
+            )
+        }
+
+        function clearSession() {
+            localStorage.removeItem(AUTH_STORAGE_KEY)
+        }
+
+        function setAuthError(message = '') {
+            const error = document.getElementById('auth-error')
+            if (error) error.textContent = message
+        }
+
+        function showLogin() {
+            document.getElementById('login-screen').classList.remove('is-hidden')
+            document.getElementById('app-shell').classList.add('is-hidden')
+            document.getElementById('session-user').textContent = ''
+            updateApiStatus('offline', 'Sesión requerida')
+        }
+
+        function showApp(user) {
+            currentUser = user
+            document.getElementById('login-screen').classList.add('is-hidden')
+            document.getElementById('app-shell').classList.remove('is-hidden')
+            document.getElementById('session-user').textContent = user.email
+        }
+
+        function startAuthenticatedSession(user) {
+            persistSession(user)
+            showApp(user)
+            loadProjectsFromApi()
+        }
+
+        function handleLogin(event) {
+            event.preventDefault()
+            const email = document.getElementById('login-email').value.trim().toLowerCase()
+            const password = document.getElementById('login-password').value
+
+            if (email !== DEMO_USER.email || password !== DEMO_USER.password) {
+                setAuthError('Credenciales inválidas. Usa el acceso demo por ahora.')
+                return
+            }
+
+            setAuthError('')
+            startAuthenticatedSession({ email: DEMO_USER.email, name: DEMO_USER.name })
+        }
+
+        function handleLogout() {
+            clearSession()
+            currentUser = null
+            projects = []
+            filter = 'all'
+            search = ''
+            editingId = null
+            apiLoadError = ''
+            document.getElementById('search-input').value = ''
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === 'all')
+            })
+            closeModal()
+            renderCards()
+            showLogin()
+        }
+
+        function updateApiStatus(state, message) {
+            const dot = document.getElementById('api-status-dot')
+            const label = document.getElementById('api-status-label')
+            if (!dot || !label) return
+
+            if (state === 'loading') {
+                dot.style.background = 'var(--accent-2)'
+                label.textContent = message || 'Conectando API'
+                return
+            }
+
+            if (state === 'online') {
+                dot.style.background = 'var(--accent)'
+                label.textContent = message || 'API conectada'
+                return
+            }
+
+            dot.style.background = '#ef4444'
+            label.textContent = message || 'API no disponible'
+        }
+
+        function parseList(value) {
+            if (Array.isArray(value)) {
+                return value
+                    .map(item => String(item).trim())
+                    .filter(Boolean)
+            }
+            if (typeof value === 'string') {
+                return value
+                    .split(',')
+                    .map(item => item.trim())
+                    .filter(Boolean)
+            }
+            return []
+        }
+
+        function normalizeStatus(value) {
+            const numeric = parseInt(value, 10)
+            if (!Number.isNaN(numeric) && API_STATUS_TO_UI[numeric]) {
+                return API_STATUS_TO_UI[numeric]
+            }
+
+            const status = String(value || '').toLowerCase()
+            return ALLOWED_STATUS.includes(status) ? status : 'idea'
+        }
+
+        function normalizeProgress(value) {
+            return Math.min(100, Math.max(0, parseInt(value, 10) || 0))
+        }
+
+        function normalizeProject(raw) {
+            if (!raw || typeof raw !== 'object') return null
+
+            const id =
+                raw.id ??
+                raw.projectId ??
+                raw.projectID ??
+                raw.Id ??
+                raw.ProjectId ??
+                crypto.randomUUID()
+
+            return {
+                id: String(id),
+                name: String(
+                    raw.name ?? raw.title ?? raw.projectName ?? raw.Name ?? ''
+                ).trim() || 'Proyecto sin nombre',
+                description: String(
+                    raw.description ??
+                        raw.details ??
+                        raw.projectDescription ??
+                        raw.Description ??
+                        ''
+                ).trim() || 'Sin descripción',
+                status: normalizeStatus(raw.status ?? raw.state ?? raw.Status),
+                progress: normalizeProgress(
+                    raw.progress ?? raw.completion ?? raw.percent ?? raw.Progress
+                ),
+                url: String(
+                    raw.url ??
+                        raw.liveDemoUrl ??
+                        raw.liveUrl ??
+                        raw.demoUrl ??
+                        raw.Url ??
+                        raw.LiveDemoUrl ??
+                        ''
+                ).trim(),
+                repo: String(
+                    raw.repo ??
+                        raw.repositoryUrl ??
+                        raw.repoUrl ??
+                        raw.RepositoryUrl ??
+                        ''
+                ).trim(),
+                stack: parseList(raw.stack ?? raw.techStack ?? raw.Stack),
+                tags: parseList(raw.tags ?? raw.labels ?? raw.Tags)
+            }
+        }
+
+        function normalizeApiCollection(payload) {
+            if (Array.isArray(payload)) return payload
+            if (Array.isArray(payload?.value)) return payload.value
+            if (Array.isArray(payload?.items)) return payload.items
+            if (Array.isArray(payload?.data)) return payload.data
+            if (Array.isArray(payload?.$values)) return payload.$values
+            return []
+        }
+
+        function normalizeApiItem(payload) {
+            if (!payload) return null
+            if (Array.isArray(payload)) return normalizeProject(payload[0])
+            if (Array.isArray(payload?.value)) return normalizeProject(payload.value[0])
+            if (payload?.value && typeof payload.value === 'object') {
+                return normalizeProject(payload.value)
+            }
+            if (payload?.data && typeof payload.data === 'object') {
+                return normalizeProject(payload.data)
+            }
+            return normalizeProject(payload)
+        }
+
+        function projectToApiPayload(project, forceNumericStatus = false) {
+            const numericStatus = UI_STATUS_TO_API[project.status] ?? 0
+            return {
+                name: project.name,
+                project: project.name,
+                description: project.description,
+                status: forceNumericStatus ? numericStatus : project.status,
+                progress: project.progress,
+                url: project.url,
+                liveDemoUrl: project.url,
+                repo: project.repo,
+                repoUrl: project.repo,
+                stack: project.stack,
+                techStack: project.stack.join(', '),
+                tags: (project.tags || []).map(t => String(t).trim()).filter(Boolean).join(', ')
+            }
+        }
+
+        async function saveToApi(path, method, projectData, includeId = null) {
+            const stringPayload = projectToApiPayload(projectData, false)
+            if (includeId !== null && includeId !== undefined) {
+                stringPayload.id = includeId
+            }
+
+            try {
+                return await apiRequest(path, {
+                    method,
+                    body: JSON.stringify(stringPayload)
+                })
+            } catch (error) {
+                const numericPayload = projectToApiPayload(projectData, true)
+                if (includeId !== null && includeId !== undefined) {
+                    numericPayload.id = includeId
+                }
+
+                return apiRequest(path, {
+                    method,
+                    body: JSON.stringify(numericPayload)
+                })
+            }
+        }
+
+        function buildApiUrl(path = '') {
+            if (!path) return API_BASE_URL
+            return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
+        }
+
+        async function apiRequest(path = '', options = {}) {
+            const { body, headers = {}, ...rest } = options
+            const response = await fetch(buildApiUrl(path), {
+                method: rest.method || 'GET',
+                headers: {
+                    Accept: 'application/json',
+                    ...(body ? { 'Content-Type': 'application/json' } : {}),
+                    ...headers
+                },
+                body,
+                ...rest
+            })
+
+            if (!response.ok) {
+                let detail = `HTTP ${response.status}`
+                try {
+                    const errorBody = await response.json()
+                    detail = errorBody?.message || errorBody?.title || detail
+                } catch {
+                    // Ignora cuerpo no JSON en errores.
+                }
+                throw new Error(detail)
+            }
+
+            if (response.status === 204) return null
+
+            const contentType = response.headers.get('content-type') || ''
+            if (!contentType.includes('application/json')) return null
+
+            return response.json()
+        }
+
+        async function loadProjectsFromApi() {
+            updateApiStatus('loading', 'Cargando proyectos...')
+            const grid = document.getElementById('grid')
+            grid.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-number">...</div>
+          <div class="empty-msg">Conectando con API local...</div>
+        </div>`
+
+            try {
+                const responseData = await apiRequest()
+                projects = normalizeApiCollection(responseData)
+                    .map(normalizeProject)
+                    .filter(Boolean)
+                apiLoadError = ''
+                updateApiStatus('online', 'API conectada')
+            } catch (error) {
+                console.error('No se pudo cargar proyectos desde API:', error)
+                projects = []
+                apiLoadError =
+                    'No se pudo conectar al API en localhost:9026. Verifica que el backend esté corriendo y con CORS habilitado.'
+                updateApiStatus('offline', 'API no disponible')
+            }
+
+            renderCards()
+        }
+
+        // ── RENDER ──
+        function updateStats() {
+            document.getElementById('stat-total').textContent = projects.length
+            document.getElementById('stat-live').textContent = projects.filter(
+                p => p.status === 'live'
+            ).length
+            document.getElementById('stat-wip').textContent = projects.filter(
+                p => p.status === 'wip'
+            ).length
+        }
+
+        const STATUS_LABELS = {
+            live: 'En vivo',
+            wip: 'En progreso',
+            paused: 'Pausado',
+            idea: 'Idea'
+        }
+
+        function renderCards() {
+            const grid = document.getElementById('grid')
+            let visible = projects
+
+            if (filter !== 'all') visible = visible.filter(p => p.status === filter)
+            if (search.trim()) {
+                const q = search.toLowerCase()
+                visible = visible.filter(
+                    p =>
+                        p.name.toLowerCase().includes(q) ||
+                        p.description.toLowerCase().includes(q) ||
+                        (p.tags || []).some(t => t.toLowerCase().includes(q)) ||
+                        (p.stack || []).some(s => s.toLowerCase().includes(q))
+                )
+            }
+
+            if (visible.length === 0) {
+                const message = apiLoadError
+                    ? apiLoadError
+                    : 'Ningún proyecto encontrado. ¡Agrega uno!'
+                grid.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-number">0</div>
+          <div class="empty-msg">${message}</div>
+        </div>`
+                updateStats()
+                return
+            }
+
+            grid.innerHTML = visible
+                .map(
+                    (p, i) => `
+      <div class="card" style="animation-delay:${i * 0.05}s">
+        <button class="card-edit-btn" onclick="openEdit('${p.id}')" title="Editar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
+        <div class="card-header">
+          <div class="card-index">${String(i + 1).padStart(2, '0')}</div>
+          <div class="card-badges">
+            <span class="badge badge-status-${p.status}">${STATUS_LABELS[p.status]}</span>
+            ${(p.tags || [])
+                            .map(t => `<span class="badge badge-tag">${t}</span>`)
+                            .join('')}
+          </div>
+        </div>
+        <div class="card-name">${p.name}</div>
+        <div class="card-desc">${p.description}</div>
+        ${(p.stack || []).length
+                            ? `
+          <div class="card-stack">
+            ${p.stack.map(s => `<span class="stack-pill">${s}</span>`).join('')}
+          </div>`
+                            : ''
+                        }
+        <div class="card-progress">
+          <div class="progress-meta">
+            <span class="progress-label">Progreso</span>
+            <span class="progress-pct">${p.progress}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${p.progress}%"></div>
+          </div>
+        </div>
+        <div class="card-actions">
+          ${p.url
+                            ? `<a class="action-btn action-live" href="${p.url}" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Ver en vivo
+              </a>`
+                            : `<span class="action-btn" style="background:var(--surface-2);border:1px solid var(--border);color:var(--text-muted);cursor:default">Sin deploy</span>`
+                        }
+          ${p.repo
+                            ? `<a class="action-btn action-repo" href="${p.repo}" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577v-2.165c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.929.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                GitHub
+              </a>`
+                            : `<span class="action-btn" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);cursor:default">Sin repo</span>`
+                        }
+        </div>
+      </div>
+    `
+                )
+                .join('')
+
+            updateStats()
+        }
+
+        // ── FILTER ──
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document
+                    .querySelectorAll('.filter-btn')
+                    .forEach(b => b.classList.remove('active'))
+                btn.classList.add('active')
+                filter = btn.dataset.filter
+                renderCards()
+            })
+        })
+
+        document.getElementById('search-input').addEventListener('input', e => {
+            search = e.target.value
+            renderCards()
+        })
+
+        // ── MODAL ──
+        function openModal() {
+            document.getElementById('modal').classList.add('open')
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('open')
+            editingId = null
+            clearForm()
+            setModalBusy(false)
+        }
+
+        function clearForm() {
+            ;['f-name', 'f-desc', 'f-url', 'f-repo', 'f-stack', 'f-tags'].forEach(
+                id => {
+                    document.getElementById(id).value = ''
+                }
+            )
+            document.getElementById('f-status').value = 'wip'
+            document.getElementById('f-progress').value = 0
+        }
+
+        function setModalBusy(isBusy) {
+            ;['btn-cancel', 'btn-save', 'btn-delete'].forEach(id => {
+                const button = document.getElementById(id)
+                if (button) button.disabled = isBusy
+            })
+
+            const saveButton = document.getElementById('btn-save')
+            if (saveButton) {
+                saveButton.textContent = isBusy ? 'Guardando...' : 'Guardar'
+            }
+
+            const deleteButton = document.getElementById('btn-delete')
+            if (deleteButton) {
+                deleteButton.textContent = isBusy ? 'Eliminando...' : 'Eliminar'
+            }
+        }
+
+        document.getElementById('add-btn').addEventListener('click', () => {
+            editingId = null
+            clearForm()
+            document.getElementById('modal-title').textContent = 'Nuevo Proyecto'
+
+            const actions = document.getElementById('modal-actions')
+            actions.innerHTML = `
+      <button class="btn-cancel" id="btn-cancel">Cancelar</button>
+      <button class="btn-save" id="btn-save">Guardar</button>`
+            bindModalButtons()
+            openModal()
+        })
+
+        function openEdit(id) {
+            const p = projects.find(x => x.id === id)
+            if (!p) return
+            editingId = id
+
+            document.getElementById('f-name').value = p.name
+            document.getElementById('f-desc').value = p.description
+            document.getElementById('f-status').value = p.status
+            document.getElementById('f-progress').value = p.progress
+            document.getElementById('f-url').value = p.url || ''
+            document.getElementById('f-repo').value = p.repo || ''
+            document.getElementById('f-stack').value = (p.stack || []).join(', ')
+            document.getElementById('f-tags').value = (p.tags || []).join(', ')
+
+            document.getElementById('modal-title').textContent = 'Editar Proyecto'
+
+            const actions = document.getElementById('modal-actions')
+            actions.innerHTML = `
+      <button class="btn-delete" id="btn-delete">Eliminar</button>
+      <button class="btn-cancel" id="btn-cancel">Cancelar</button>
+      <button class="btn-save" id="btn-save">Guardar</button>`
+            bindModalButtons()
+            openModal()
+        }
+
+        function bindModalButtons() {
+            document
+                .getElementById('btn-cancel')
+                .addEventListener('click', closeModal)
+            document
+                .getElementById('btn-save')
+                .addEventListener('click', saveProject)
+            const delBtn = document.getElementById('btn-delete')
+            if (delBtn) delBtn.addEventListener('click', deleteProject)
+        }
+
+        document.getElementById('modal').addEventListener('click', e => {
+            if (e.target === document.getElementById('modal')) closeModal()
+        })
+
+        function collectProjectFormData() {
+            return {
+                name: document.getElementById('f-name').value.trim(),
+                description: document.getElementById('f-desc').value.trim(),
+                status: document.getElementById('f-status').value,
+                progress: normalizeProgress(
+                    document.getElementById('f-progress').value
+                ),
+                url: document.getElementById('f-url').value.trim(),
+                repo: document.getElementById('f-repo').value.trim(),
+                stack: parseList(document.getElementById('f-stack').value),
+                tags: parseList(document.getElementById('f-tags').value)
+            }
+        }
+
+        async function saveProject() {
+            const data = collectProjectFormData()
+            if (!data.name || !data.description) {
+                alert('El nombre y la descripción son obligatorios.')
+                return
+            }
+
+            setModalBusy(true)
+
+            try {
+                if (editingId) {
+                    const responseData = await saveToApi(
+                        `/${encodeURIComponent(editingId)}`,
+                        'PUT',
+                        data,
+                        editingId
+                    )
+                    const updatedProject =
+                        normalizeApiItem(responseData) ||
+                        normalizeProject({ id: editingId, ...data })
+                    const idx = projects.findIndex(p => p.id === editingId)
+                    if (idx !== -1 && updatedProject) projects[idx] = updatedProject
+                } else {
+                    const responseData = await saveToApi('', 'POST', data)
+                    const createdProject =
+                        normalizeApiItem(responseData) || normalizeProject(data)
+                    if (createdProject) projects.unshift(createdProject)
+                }
+
+                apiLoadError = ''
+                updateApiStatus('online', 'API conectada')
+                renderCards()
+                closeModal()
+            } catch (error) {
+                updateApiStatus('offline', 'Error al guardar')
+                alert(`No se pudo guardar en el API: ${error.message}`)
+                setModalBusy(false)
+            }
+        }
+
+        async function deleteProject() {
+            if (!editingId) return
+            if (!confirm('¿Eliminar este proyecto? Esta acción no se puede deshacer.')) {
+                return
+            }
+
+            setModalBusy(true)
+
+            try {
+                await apiRequest(`/${encodeURIComponent(editingId)}`, {
+                    method: 'DELETE'
+                })
+
+                projects = projects.filter(p => p.id !== editingId)
+                apiLoadError = ''
+                updateApiStatus('online', 'API conectada')
+                renderCards()
+                closeModal()
+            } catch (error) {
+                updateApiStatus('offline', 'Error al eliminar')
+                alert(`No se pudo eliminar en el API: ${error.message}`)
+                setModalBusy(false)
+            }
+        }
+
+        // ── INIT ──
+        function initApp() {
+            document.getElementById('login-form').addEventListener('submit', handleLogin)
+            document.getElementById('logout-btn').addEventListener('click', handleLogout)
+
+            const storedSession = getStoredSession()
+            if (storedSession?.email) {
+                showApp(storedSession)
+                loadProjectsFromApi()
+                return
+            }
+
+            showLogin()
+        }
+
+        initApp()
+    </script>
+</body>
+
+</html>
